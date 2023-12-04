@@ -29,9 +29,7 @@ for line in input:
 
         # calculate minimum
         for color in drawing_dict.keys():
-            game_min_counts[color] = max(
-                game_min_counts.get(color, 0), drawing_dict.get(color, 0)
-            )
+            game_min_counts[color] = max(game_min_counts.get(color, 0), drawing_dict.get(color, 0))
 
     game_power = 1
     for color_count in game_min_counts.values():

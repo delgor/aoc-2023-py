@@ -41,9 +41,7 @@ for line_no in range(0, len(input)):
     for next_card in range(0, card_win):
         card_counts[line_no + 1 + next_card] += additional_cards
 
-    print(
-        f"Card {card_id}: win at {winning_numbers}, you got {draw_numbers}. points: {card_win}"
-    )
+    print(f"Card {card_id}: win at {winning_numbers}, you got {draw_numbers}. points: {card_win}")
 
 
 from functools import reduce

@@ -26,9 +26,7 @@ for line in input:
     map_func = int
 
     winning_numbers, draw_numbers = raw_numbers.split(" | ", 1)
-    winning_numbers = list(
-        map(map_func, filter(filter_func, winning_numbers.split(" ")))
-    )
+    winning_numbers = list(map(map_func, filter(filter_func, winning_numbers.split(" "))))
     draw_numbers = list(map(map_func, filter(filter_func, draw_numbers.split(" "))))
 
     # Calculate win
@@ -40,9 +38,7 @@ for line in input:
     # This will clamp 0.5 to 0, if no win was drawn. This is simpler than nesting another if inside the above loop imho
     card_win = int(card_win)
 
-    print(
-        f"Card {card_id}: win at {winning_numbers}, you got {draw_numbers}. points: {card_win}"
-    )
+    print(f"Card {card_id}: win at {winning_numbers}, you got {draw_numbers}. points: {card_win}")
 
     sum += card_win
 

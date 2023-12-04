@@ -19,9 +19,7 @@ for line_no in range(0, len(input)):
     potential_part_no_iter = match_digits.finditer(line)
     for potential_part_no in potential_part_no_iter:
         num = int(potential_part_no.group(0))
-        print(
-            f"potential part no: {num} at {line_no}:{potential_part_no.start()}-{potential_part_no.end()}"
-        )
+        print(f"potential part no: {num} at {line_no}:{potential_part_no.start()}-{potential_part_no.end()}")
         bounding_box_upper = max(0, line_no - 1)
         bounding_box_lower = min(line_no + 1, len(input))
         bounding_box_left = max(0, potential_part_no.start() - 1)
