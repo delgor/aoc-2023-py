@@ -23,6 +23,17 @@ races = zip(times, distances)
 prod_of_margins = 1
 
 for time, distance in races:
+    # Optimal time is t/2. This can be derived via math:
+    #     dist(t_accel) = t_accel * t_move  | insert t = t_accel + t_move
+    # <=> dist(t_accel) = t_accel * (t - t_accel) = t*t_accel - t_accel^2  | now derive
+    #  -> d/dt_accel = t - 2*t_accel + c  | =0 to find extreme points
+    #                  t - 2*t_accel + c = 0
+    #              <=> t_accel = t+c/2
+    # This is used as a starting point, because it is always inside [min_accel, max_accel]
+    #
+    # From a sharp eye (probably can be derived too) we notice that min_accel+max_accel = time holds.
+    # So we only search into one direction, and calculate the other bound from that.
+    # Searching upwards seems faster (upper bound in examples is always nearer to t/2)
     max_accel = int(time / 2)
     while (time - max_accel) * max_accel > distance:
         max_accel += 1
