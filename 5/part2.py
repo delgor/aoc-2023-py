@@ -46,34 +46,9 @@ for line in input:
         from_ = None
         to_ = None
 
-pprint(maps)
-
-
-def map_value(value, ranges: [MapRange]):
-    # Check if any range applies
-    for range_ in ranges:
-        if range_.source <= value < range_.source + range_.length:
-            return value - range_.source + range_.destination
-    # If not, return value
-    return value
-
-
-def apply_maps(input_value, input_type):
-    applied_mappings = {input_type: input_value}
-    while input_type:
-        if input_type in maps:
-            input_value = map_value(input_value, maps[input_type]["ranges"])
-            input_type = maps[input_type]["target"]
-            applied_mappings[input_type] = input_value
-        else:
-            break
-    return applied_mappings
-
-
-min_location = None
-
 
 def seed_iter(seeds):
+    """Transform seeds list into (start, length) tuples"""
     assert len(seeds) % 2 == 0
     i = 0
     while i < len(seeds):
@@ -179,6 +154,7 @@ in_ranges = list(seed_iter(seeds))
 location_ranges = apply_maps_ranges(in_ranges, "seed")
 
 # Find minimum from result set
+min_location = None
 for loc_range in location_ranges:
     # print(f"  loc_range: {loc_range}")
     if min_location is None or loc_range.start < min_location:
