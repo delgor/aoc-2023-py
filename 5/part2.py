@@ -2,7 +2,9 @@ from pathlib import Path
 from collections import namedtuple
 from pprint import pprint
 
-MapRange = namedtuple("Range", "destination source length")
+MapRange = namedtuple("MapRange", "destination source length")
+InRange = namedtuple("InRange", "start length")
+
 
 p = Path("input.real.txt")
 input = p.read_text().splitlines(keepends=False)
@@ -70,19 +72,116 @@ def apply_maps(input_value, input_type):
 
 min_location = None
 
+
 def seed_iter(seeds):
     assert len(seeds) % 2 == 0
     i = 0
     while i < len(seeds):
-        yield seeds[i], seeds[i + 1]
+        yield InRange(start=seeds[i], length=seeds[i + 1])
         i += 2
 
-# This works, but bruteforce every seed is painfully slow. Rework this.
-for seed_start, seed_cnt in seed_iter(seeds):
-    print(f"got {seed_cnt} seeds starting at {seed_start}")
-    for seed in range(seed_start, seed_start + seed_cnt):
-        seeds_mapped = apply_maps(seed, "seed")
-        #print(f"applied mapping: {seeds_mapped}")
-        min_location = min(min_location, seeds_mapped["location"]) if min_location else seeds_mapped["location"]
+
+def map_range(in_range: InRange, map_ranges: [MapRange]) -> [InRange]:
+    # If we need to split a InRange, we still need to map other partial ranges. ranges_to_map contains the list of
+    # remaining splits/ranges to map.
+    ranges_to_map = [in_range]
+    ranges_out = []
+    while len(ranges_to_map) > 0:
+        in_range = ranges_to_map.pop()
+
+        # Match range against all map ranges, and register when we find a match
+        found_match = False
+        for map_range in map_ranges:
+            # Fully contained in map range
+            if (
+                in_range.start >= map_range.source
+                and in_range.start + in_range.length <= map_range.source + map_range.length
+            ):
+                new_range_start = in_range.start - map_range.source + map_range.destination
+                ranges_out.append(InRange(start=new_range_start, length=in_range.length))
+                found_match = True
+            # Beginning of in_range in map_range, but end outside, because length
+            elif (
+                map_range.source <= in_range.start < map_range.source + map_range.length
+                and in_range.start + in_range.length > map_range.source + map_range.length
+            ):
+                # Calculate last element of in_range in map_range for splitting
+                map_range_source_end = map_range.source + map_range.length
+                overlap_length = map_range_source_end - in_range.start
+                inner_range = InRange(
+                    start=in_range.start - map_range.source + map_range.destination, length=overlap_length
+                )
+                ranges_out.append(inner_range)
+
+                # Reinsert remaining range into stack for further mapping
+                remaining_range = InRange(start=map_range_source_end, length=in_range.length - overlap_length)
+                ranges_to_map.append(remaining_range)
+                found_match = True
+            # Beginning of in_range out of map_range, but end (-1!) inside
+            elif (
+                in_range.start < map_range.source
+                and map_range.source <= (in_range.start + in_range.length - 1) < map_range.source + map_range.length
+            ):
+                overlap_length = in_range.start + in_range.length - map_range.source
+                assert overlap_length != 0
+                overlap_range = InRange(start=map_range.destination, length=overlap_length)
+                ranges_out.append(overlap_range)
+
+                remaining_range = InRange(start=in_range.start, length=in_range.length - overlap_length)
+                ranges_to_map.append(remaining_range)
+
+                found_match = True
+
+            if found_match:
+                # No need to check other MapRanges
+                break
+
+        # found no match in any of map ranges, use direct mapping
+        if not found_match:
+            ranges_out.append(in_range)
+
+    return ranges_out
+
+
+def apply_maps_ranges(in_ranges: [InRange], input_type: str) -> [InRange]:
+    """Run input ranges of input_type through all remaining mappings"""
+    out_ranges = []
+    while input_type:
+        if input_type in maps:
+            # fetch mappings for current round
+            next_type = maps[input_type]["target"]
+            map_ranges = maps[input_type]["ranges"]
+            out_ranges = []
+
+            print(f"Running mappings for {input_type} -> {next_type}")
+
+            # apply to all ranges
+            for in_range in in_ranges:
+                print(f"..mapping {in_range}")
+                mapped = map_range(in_range, map_ranges)
+                sum_mapped_length = 0
+                for _ in mapped:
+                    print(f"....to {_}")
+                    sum_mapped_length += _.length
+                assert in_range.length == sum_mapped_length
+                out_ranges.extend(mapped)
+
+            # prepare for next mapping round
+            in_ranges = out_ranges
+            input_type = next_type
+        else:
+            break
+    return out_ranges
+
+
+# Crunch data
+in_ranges = list(seed_iter(seeds))
+location_ranges = apply_maps_ranges(in_ranges, "seed")
+
+# Find minimum from result set
+for loc_range in location_ranges:
+    # print(f"  loc_range: {loc_range}")
+    if min_location is None or loc_range.start < min_location:
+        min_location = loc_range.start
 
 print(f"min location: {min_location}")
