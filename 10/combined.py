@@ -127,25 +127,13 @@ while len(check_positions) > 0:
 ## Part 2
 # Count tiles inside (enclosed) by loop
 
-possible_inside_directions_by_symbol = {
-    # straights
-    "-": [vec(-1, 0)],
-    "|": [vec(0, +1)],
-    # turns
-    "7": [vec(+1, -1)],
-    "J": [vec(-1, -1)],
-    "L": [vec(-1, +1)],
-    "F": [vec(+1, +1)],
-    # special
-    ".": [],
-    "S": [],
-}
-
 inside_grid = [["O"] * len(grid[0]) for _ in range(len(grid))]
 
 # Copy loop to inside grid
 for loop_position in loop_positions:
     inside_grid[loop_position.y][loop_position.x] = symbol_at(loop_position)
+    # Copying the grid is not necessary, loop positions just need to be != "O" for floodfill to work
+    # on inside areas
 
 
 def floodfill(pos: vec, old_symbol, new_symbol):
