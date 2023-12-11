@@ -15,38 +15,37 @@ for y in range(0, len(input)):
     original_grid.insert(y, list(input[y]))
 
 
+def row_empty(grid, row):
+    for elem in grid[row]:
+        if elem == "#":
+            return False
+    return True
+
+
+def col_empty(grid, col):
+    for idx in range(len(grid[0])):
+        if grid[idx][col] == "#":
+            return False
+    return True
+
+
 # Expand grid
-def grid_expand(orig_grid):
-    new_grid = []
-    new_y = 0
+def grid_expanded_costs(orig_grid, cost=2):
+    cost_grid = [[1] * len(orig_grid[0]) for _ in range(len(orig_grid))]
+
     # Expand in Y direction
     for orig_y in range(0, len(orig_grid)):
-        # use list() to copy the row - otherwise we'll modify the original on X expansion
-        new_grid.append(list(orig_grid[orig_y]))
-        new_y += 1
-        if input[orig_y].count("#") == 0:
-            new_grid.append(list(orig_grid[orig_y]))  # again: copy using list()
-            new_y += 1
+        if row_empty(orig_grid, orig_y):
+            for orig_x in range(len(orig_grid[orig_y])):
+                cost_grid[orig_y][orig_x] = cost
 
     # Expand in X direction
-    new_x = 0
-    for orig_x in range(len(orig_grid[0])):
-        # Check column
-        column_empty = True
-        for orig_y in range(len(orig_grid)):
-            if orig_grid[orig_y][orig_x] == "#":
-                column_empty = False
-                break
+    for orig_x in range(0, len(orig_grid[0])):
+        if col_empty(orig_grid, orig_x):
+            for orig_y in range(len(orig_grid)):
+                cost_grid[orig_y][orig_x] = cost
 
-        if column_empty:
-            print(f"inserting new col for original col {orig_x} at {new_x}")
-            for new_y in range(len(new_grid)):
-                new_grid[new_y].insert(new_x, ".")
-            new_x += 1
-
-        new_x += 1
-
-    return new_grid
+    return cost_grid
 
 
 def print_grid(grid):
@@ -54,14 +53,9 @@ def print_grid(grid):
         print("".join(line))
 
 
-expanded_grid = grid_expand(original_grid)
-
-print("Original:")
+print("Grid:")
 print_grid(original_grid)
 print()
-
-print("Expanded:")
-print_grid(expanded_grid)
 
 
 def find_galaxies(grid) -> list[point]:
@@ -73,7 +67,7 @@ def find_galaxies(grid) -> list[point]:
     return galaxies
 
 
-all_galaxies = find_galaxies(expanded_grid)
+all_galaxies = find_galaxies(original_grid)
 print(f"found {len(all_galaxies)} galaxies")
 # for galaxy in all_galaxies:
 #    print(f"  galaxy at {galaxy}")
@@ -93,14 +87,67 @@ print(f"found {len(all_pairs)} galaxy pairs")
 # for pair in all_pairs:
 #    print(f"  pair {pair[0]} - {pair[1]}")
 
+
+def distance(left: point, right: point, cost_grid) -> int:
+    current_point = point(*left)
+    dir_x = right.x - left.x
+    if dir_x != 0:
+        dir_x = int(dir_x / abs(dir_x))
+    dir_y = right.y - left.y
+    if dir_y != 0:
+        dir_y = int(dir_y / abs(dir_y))
+    current_distance = 0
+
+    while current_point != right:
+        # We can still choose which direction to go first
+        cost_move_x = 1
+        if 0 <= current_point.x + dir_x < len(cost_grid[0]):
+            cost_move_x = cost_grid[current_point.y][current_point.x + dir_x]
+        cost_move_y = 1
+        if 0 <= current_point.y + dir_y < len(cost_grid):
+            cost_move_y = cost_grid[current_point.y + dir_y][current_point.x]
+        if current_point.x != right.x and current_point.y != right.y:
+            if cost_move_y <= cost_move_x:
+                # Move in Y direction
+                current_distance += cost_move_y
+                current_point = point(current_point.y + dir_y, current_point.x)
+            else:
+                current_distance += cost_move_x
+                current_point = point(current_point.y, current_point.x + dir_x)
+
+        elif current_point.x != right.x:
+            current_distance += cost_move_x
+            current_point = point(current_point.y, current_point.x + dir_x)
+        elif current_point.y != right.y:
+            current_distance += cost_move_y
+            current_point = point(current_point.y + dir_y, current_point.x)
+        else:
+            print(f"Something bad is happening")
+
+    # current_distance -= 1  # Last hop is always the target galaxy, with a guaranteed cost of 1
+
+    return current_distance
+
+
 ## Part 1
 # sum of distances between each pair
 sum = 0
+cost_grid_p1 = grid_expanded_costs(original_grid, 2)
 for left, right in all_pairs:
-    distance_x = abs(left.x - right.x)
-    distance_y = abs(left.y - right.y)
-    distance = distance_x + distance_y
-    print(f"  {left} to {right}: {distance}")
-    sum += distance
+    dist = distance(left, right, cost_grid_p1)
+    print(f"  {left} to {right}: {dist}")
+    sum += dist
+
+print(f"p1 sum: {sum}")
+
+
+## Part 2
+# sum of distances between each pair with much bigger expansion
+sum = 0
+cost_grid_p1 = grid_expanded_costs(original_grid, 1000000)
+for left, right in all_pairs:
+    dist = distance(left, right, cost_grid_p1)
+    print(f"  {left} to {right}: {dist}")
+    sum += dist
 
 print(f"p1 sum: {sum}")
