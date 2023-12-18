@@ -25,7 +25,7 @@ def pos_in_grid(pos: vec):
     return False
 
 
-def shortest_way_length(start: vec, dest: vec, grid):
+def shortest_way_length(start: vec, dest: vec, grid, part2):
     # pos, prev_dir, prev_dir_len, total_distance (so far), path
     current_nodes = [(0, start, None, 0, [])]
     shortest_distance = None
@@ -77,9 +77,17 @@ def shortest_way_length(start: vec, dest: vec, grid):
         if prev_dir != None:
             valid_directions.remove(prev_dir*-1)
 
-        # Remove same direction after 3 tiles
-        if dir_length == 3:
-            valid_directions.remove(prev_dir)
+        if not part2:
+            # Remove same direction after 3 tiles
+            if dir_length == 3:
+                valid_directions.remove(prev_dir)
+        elif part2:
+            # Min of 4
+            if dir_length < 4 and prev_dir != None:
+                valid_directions = [prev_dir]
+            # Max of 10
+            elif dir_length >= 10:
+                valid_directions.remove(prev_dir)
 
         for next_dir in valid_directions:
             next_dir_length = 1
@@ -102,9 +110,11 @@ def shortest_way_length(start: vec, dest: vec, grid):
     #for path_elem in shortest_path:
     #    print(f"  {path_elem}")
     #print(f"Shortest distance: {shortest_distance}")
-    return shortest_distance
+    return shortest_distance, shortest_path
 
 # 961 is too high
 print(f"Grid of {ROWS-1}x{COLS-1}")
-part1 = shortest_way_length(vec(0,0), vec(ROWS-1, COLS-1), GRID)
+part1, part1_path = shortest_way_length(vec(0,0), vec(ROWS-1, COLS-1), GRID, False)
 print(f"part1 shortest path: {part1}")
+part2, part2_path = shortest_way_length(vec(0,0), vec(ROWS-1, COLS-1), GRID, True)
+print(f"part2 shortest path: {part2}")
